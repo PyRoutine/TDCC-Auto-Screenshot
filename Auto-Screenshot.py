@@ -38,7 +38,7 @@ class LoginTimeoutError(Exception):
 driver = None
 base_path = "./screenshots/"
 user_accounts = [] 
-shot_speed = 1
+shot_speed = 1.5
 main_window_geom = ""
 screenshot_mode = 1 
 login_type = "券商網路下單憑證" 
@@ -1062,17 +1062,30 @@ class App(tk.Tk):
         tab1 = ttk.Frame(tab_control, padding="10")
         tab2 = ttk.Frame(tab_control, padding="10") 
         tab3 = ttk.Frame(tab_control, padding="10")
+        tab4 = ttk.Frame(tab_control, padding="10") # 新增這行
         
         tab_control.add(tab1, text='  補圖任務  ')
         tab_control.add(tab2, text='  設定  ')
         tab_control.add(tab3, text='  系統資訊  ') 
+        tab_control.add(tab4, text='  教學與聲明  ') # 新增這行
 
         tab_control.pack(side="top", expand=True, fill="both")
 
         # === 右側狀態區 ===
         self.frame_log = ttk.LabelFrame(right_content, text=" 執行狀態 ")
         self.frame_log.pack(fill="both", expand=True)
-        self.log_text = scrolledtext.ScrolledText(self.frame_log, width=50, state='disabled', font=('Consolas', 9), bg='#ffffff', fg='#333333')
+        
+        # 移除 width=50，改用內邊距 padx/pady 讓視覺更平衡
+        self.log_text = scrolledtext.ScrolledText(
+            self.frame_log, 
+            state='disabled', 
+            font=('Consolas', 9), 
+            bg='#ffffff', 
+            fg='#333333',
+            padx=10, 
+            pady=10,
+            spacing2=3  # 稍微增加行間距，讓 Log 比較好讀
+        )
         self.log_text.pack(expand=True, fill="both", padx=5, pady=5)
         
         # === Tab 1: 補圖任務 ===
@@ -1212,7 +1225,57 @@ class App(tk.Tk):
         path_entry_shot.configure(state="readonly")
         path_entry_shot.pack(fill="x", padx=10, pady=(0,10))
 
-        self.refresh_user_lists() 
+       # === Tab 4: 教學與聲明 ===
+        frame_help = ttk.Frame(tab4)
+        frame_help.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # 美化排版：改用 CHAR 斷行、增加內外邊距、調整行距、柔化反白顏色
+        help_text = scrolledtext.ScrolledText(
+            frame_help, 
+            wrap=tk.CHAR,                 # 解決中文斷行破圖問題
+            font=('Microsoft JhengHei', 10), 
+            bg='#FAFAFA',                 # 微微的米灰色背景
+            fg='#333333',                 # 深灰色字體，比純黑柔和
+            padx=20,                      # 左邊界留白
+            pady=20,                      # 上邊界留白
+            spacing1=5,                   # 段落上方間距
+            spacing2=6,                   # 行距 (讓字不要全擠在一起)
+            spacing3=5                    # 段落下方間距
+        )
+        help_text.pack(fill="both", expand=True)
+        
+        readme_content = """【快速使用教學】
+1. 前往「設定」分頁，輸入並儲存你的帳號資料（姓名、身分證、憑證類型）。
+2. 回到「補圖任務」分頁，勾選你要執行的帳號。
+3. 在「股票代號」框內貼上你要補圖的代號（支援直接從 Excel 貼上，或用換行、逗號分隔）。
+4. 點擊「啟動補圖任務」，程式將自動開啟瀏覽器進行截圖。
+5. 任務完成後，會自動為你開啟截圖存放的資料夾。
+
+【注意事項】
+* 程式運作期間請勿干擾自動彈出的瀏覽器視窗。
+* 建議將「截圖等待速度」保持預設 (0.5)，若你的網路較慢或網頁卡頓導致截圖失敗，可至「設定」調高數值。
+* 遇到系統跳出抽獎提示時，若有在設定勾選「暫停 5 分鐘」，程式會等待你手動操作。
+
+【免責聲明】
+本軟體為免費開源的自動化輔助工具，僅供交流與節省重複性作業時間使用。使用者需自行承擔執行本程式所衍生之任何風險（包含但不限於帳號登入異常、截圖遺漏、資料錯誤或設備問題等）。作者不保證程式的絕對穩定性，亦不對任何直接或間接損失負擔法律責任。使用本軟體即代表您同意上述聲明。"""
+        
+        help_text.insert(tk.END, readme_content)
+        
+        # 鎖定編輯，並將反白選取顏色改為淺灰色，避免整片刺眼的深藍色
+        help_text.configure(state='disabled', selectbackground='#E2E6EA', selectforeground='#111111')
+
+        # 1. 強迫視窗立即更新，確保寬度 900 已經生效
+        self.update()
+
+        # 2. 設定分割線位置：總寬 900 的一半是 450
+        # 如果你覺得 LOG 還是太大，可以把 450 調大一點（例如 480）
+        try:
+            self.pane.sashpos(0, 480)
+        except:
+            # 預防某些系統環境下無法直接設定，改用延遲執行
+            self.after(200, lambda: self.pane.sashpos(0, 450))
+
+        self.refresh_user_lists()
 
     def _finish_task(self, task_start_time=None, total_items=0):
         task_end_time = time.time() if task_start_time else None
