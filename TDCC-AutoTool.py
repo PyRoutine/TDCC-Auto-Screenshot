@@ -1596,7 +1596,7 @@ class App(tk.Tk):
         else:
             messagebox.showinfo("完成", msg)
 
-        self.on_closing()
+        #self.on_closing()
 
     def start_screenshot_task(self):
         self.save_config()  
